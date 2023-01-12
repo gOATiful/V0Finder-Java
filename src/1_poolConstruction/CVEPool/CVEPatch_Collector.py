@@ -11,8 +11,9 @@ import re
 import tlsh
 
 
+
 ## CONFIGURE ##
-jsonpath 	= './NVDjsonfeed'
+jsonpath 	= 'src/1_poolConstruction/CVEPool/NVDjsonfeed'
 gitlist 	= [
 	"github.com",
 	"cgit",
@@ -23,7 +24,7 @@ homePath 	= os.getcwd()
 diffPath	= homePath + "/diffs/"
 clonePath	= homePath + "/clones/"
 vulFuncPath = homePath + "/vulFuncs/"
-ctagPath	= homePath + "/ctags"		# Ctags binary path (please specify your own ctags path)
+ctagPath	= homePath + "jtags_0.7/"		# Ctags binary path (please specify your own ctags path)
 
 # Generate directories
 shouldMake = [diffPath, clonePath, vulFuncPath]
@@ -124,49 +125,58 @@ def getPackageName(url):
 
 
 
+def load_kb():
+    with open("src/1_poolConstruction/CVEPool/NVDjsonfeed/META.json", "r") as meta_file:
+        META = json.load(meta_file)
+    with open("src/1_poolConstruction/CVEPool/NVDjsonfeed/URLS.json", "r") as urls_file:
+        URLS = json.load(urls_file)
+    return META, URLS
+
 
 
 def main():
-	for jsonfile in os.listdir(jsonpath):
-		with open(os.path.join(jsonpath, jsonfile), 'r', encoding = "UTF-8") as fp:
-			res     = json.load(fp)
-			cvelist = res["CVE_Items"]
+#	for jsonfile in os.listdir(jsonpath):
+#		with open(os.path.join(jsonpath, jsonfile), 'r', encoding = "UTF-8") as fp:
+#			res     = json.load(fp)
+#			cvelist = res["CVE_Items"]
+#
+#			for eachcve in cvelist:
+#				isPatch 	= 0
+#				CVEID 		= "CVE-0000-0000"
+#				CWEID 		= "CWE-000"
+#				CVSSv2 		= 0.0
+#
+#				CVEID  	 	= eachcve["cve"]["CVE_data_meta"]["ID"]
+#
+#				try:
+#					CWEID   = eachcve["cve"]["problemtype"]["problemtype_data"][0]["description"][0]["value"]
+#				except:
+#					CWEID 	= "CWE-000"
+#
+#				try:
+#					CVSSv2  = eachcve["impact"]["baseMetricV2"]["cvssV2"]["baseScore"]
+#				except:
+#					CVSSv2 	= 0.0
+#
+#				refs    	= eachcve["cve"]["references"]["reference_data"]
+#
+#				META[CVEID] = CVEID+'_'+CWEID+'_'+str(CVSSv2)
+#
+#				for eachref in refs:
+#					url = eachref["url"]
+#
+#					for keyword in gitlist:
+#						if keyword in url.lower():
+#							if 'commit' not in url:
+#								continue
+#							if META[CVEID] not in URLS:
+#								URLS[META[CVEID]] = []
+#							URLS[META[CVEID]].append(url)
+#
+#	print ('[+] Done: Parsing Git-related URLs from the NVD JSON feeds.')
+#
 
-			for eachcve in cvelist:
-				isPatch 	= 0
-				CVEID 		= "CVE-0000-0000"
-				CWEID 		= "CWE-000"
-				CVSSv2 		= 0.0
-
-				CVEID  	 	= eachcve["cve"]["CVE_data_meta"]["ID"]
-
-				try:
-					CWEID   = eachcve["cve"]["problemtype"]["problemtype_data"][0]["description"][0]["value"]
-				except:
-					CWEID 	= "CWE-000"
-
-				try:
-					CVSSv2  = eachcve["impact"]["baseMetricV2"]["cvssV2"]["baseScore"]
-				except:
-					CVSSv2 	= 0.0
-
-				refs    	= eachcve["cve"]["references"]["reference_data"]
-
-				META[CVEID] = CVEID+'_'+CWEID+'_'+str(CVSSv2)
-
-				for eachref in refs:
-					url = eachref["url"]
-
-					for keyword in gitlist:
-						if keyword in url.lower():
-							if 'commit' not in url:
-								continue
-							if META[CVEID] not in URLS:
-								URLS[META[CVEID]] = []
-							URLS[META[CVEID]].append(url)
-
-	print ('[+] Done: Parsing Git-related URLs from the NVD JSON feeds.')
-
+	META, URLS = load_kb()
 
 	for CVE in URLS:
 		for url in URLS[CVE]:
@@ -214,7 +224,7 @@ def main():
 
 				for chunks in diffBody.split('diff --git a')[1:]:
 					ext = chunks.split('\n')[0]
-					if ext.endswith('.c') or ext.endswith('.cc') or ext.endswith('.cpp'):
+					if ext.endswith('.java') :#or ext.endswith('.cc') or ext.endswith('.cpp'):
 						saveStr += "diff --git a" + chunks + '\n'
 						flag 	= 1
 
@@ -242,7 +252,7 @@ def main():
 			if 'PACK:' not in splitedBody[0] or 'CLONE:' not in splitedBody[1] or 'URL:' not in splitedBody[2]:
 			   continue
 
-			pack 	= body.split('\n')[0].split('PACK:')[1]
+			pack = body.split('\n')[0].split('PACK:')[1]
 			if pack =='':
 				print (diffs + '\t' + ": this vul. cannot be parsed automatically..")
 				continue
